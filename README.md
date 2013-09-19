@@ -1,4 +1,4 @@
-testcombobulator
+Testcombobulator
 ================
 
-Testing Prototype
+Automated Testing Prototype.
