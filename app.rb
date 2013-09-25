@@ -2,23 +2,37 @@ require 'bundler/setup'
 require 'sinatra/base'
 require 'haml'
 require 'json'
+require 'sinatra/activerecord'
+
 require 'rspec'
 require 'rspec/core/formatters/json_formatter'
 
+# Load everything in these paths:
+%w(
+  config/initializers
+  models
+).each do |path|
+  Dir["#{File.dirname(__FILE__)}/#{path}/**/*.rb"].each {|f| require f }
+end
+
 class App < Sinatra::Base
+  register Sinatra::ActiveRecordExtension
   configure do
     set :views, File.join(File.dirname(__FILE__), '/views')
+    set :database, "sqlite3:///db/development.sqlite3"
   end
 
   get '/' do
-    haml :'candidates/index'
+    haml :'candidates/index', :locals => {
+      :candidates => Candidate.all,
+    }
   end
 
-  get '/candidates/1/tests' do
-    candidate = {:id => 1, :name => "Fred Fredson", :host => 'http://localhost:9292'}
+  get '/candidates/:id/tests' do
+    candidate = Candidate.find(params[:id])
     haml :'tests/results', :locals => {
       :candidate => candidate,
-      :results => spec_run(candidate[:host]),
+      :results => spec_run(candidate.url_base),
     }
   end
 
@@ -37,17 +51,17 @@ class App < Sinatra::Base
   end
 end
 
-RSpec.configure do |c|
-  c.add_setting :target_host
-end
-
 def spec_run(host)
   # So totally not thread-safe.
+  unless RSpec.configuration.respond_to?(:target_host)
+    RSpec.configure do |c|
+      c.add_setting :target_host
+    end
+  end
   RSpec.configure do |c|
     c.target_host = host
   end
   config = RSpec.configuration
-  #formatter = RSpec::Core::Formatters::DocumentationFormatter.new(config.out)
   formatter = RSpec::Core::Formatters::JsonFormatter.new(config.out)
   reporter = RSpec::Core::Reporter.new(formatter)
   config.instance_variable_set(:@reporter, reporter)

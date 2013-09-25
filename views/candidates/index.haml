@@ -2,5 +2,8 @@
 %p Totally not public.
 
 %ul
-  %li
-    %a{href: "/candidates/1/tests"} Fred Fredson
+  - candidates.each do |candidate|
+    %li
+      %h3
+        %a{href: "/candidates/#{candidate.id}/tests"}= "#{candidate.name} (#{candidate.email})"
+      %pre git remote add heroku #{candidate.git}

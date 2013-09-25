@@ -1,3 +1,4 @@
+require 'rspec'
 require 'faraday'
 require 'faraday_middleware'
 
